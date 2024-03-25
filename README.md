@@ -7,3 +7,4 @@ Need BepinEx to Work.
 
 Insert key - Toggle "show Menu"
 
+![GitHub Logo](/images/Menu.png)

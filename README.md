@@ -8,4 +8,4 @@ Need BepinEx to Work.
 Insert key - Toggle "show Menu"
 
 
-<img src="images/Menu.png"/>
+<img src="Menu.PNG"/>

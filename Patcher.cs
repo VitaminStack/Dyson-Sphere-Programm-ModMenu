@@ -21,8 +21,7 @@ namespace VitaminPatch
 
 
             MethodInfo DroneMethod = AccessTools.Method(typeof(DroneComponent), "InternalUpdate", new Type[] { typeof(CraftData).MakeByRefType(), typeof(PlanetFactory), typeof(Vector3).MakeByRefType(), typeof(float), typeof(float), typeof(double).MakeByRefType(), typeof(double).MakeByRefType(), typeof(double), typeof(double), typeof(float).MakeByRefType() });
-            MethodInfo DronenExportMethod = AccessTools.Method(typeof(DroneComponent), "Export", new Type[] { typeof(BinaryWriter) });
-
+            
             MethodInfo MechaMethod = AccessTools.Method(typeof(Mecha), "GameTick", new Type[] { typeof(long), typeof(float) });
             MethodInfo MechaExportMethod = AccessTools.Method(typeof(Mecha), "Export", new Type[] { typeof(BinaryWriter) });
 
@@ -35,7 +34,6 @@ namespace VitaminPatch
 
             VitaminLogger.LogInfo("Loading Patches...");
             harmony.Patch(DroneMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.DronePrefix))));
-            harmony.Patch(DronenExportMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.ExportPrefix))));
             harmony.Patch(MechaMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaPrefix))));
             harmony.Patch(MechaExportMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaExportPrefix))));
             harmony.Patch(BeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.AlterBeltPrefix))));
@@ -62,12 +60,6 @@ namespace VitaminPatch
                 cachedDronespeed = droneSpeed;
             }
             droneSpeed = droneSpeed * VitaminsMieseMenu.DroneSlider;
-
-            return true;
-        }
-        public static bool ExportPrefix(ref DroneComponent __instance, ref BinaryWriter w)
-        {
-            VitaminsMieseMenu.DroneSlider = 1.0f;
 
             return true;
         }
@@ -280,7 +272,7 @@ namespace VitaminPatch
         {
             for (int i = 0; i < __instance.beltPool.Length; i++)
             {
-                __instance.beltPool[i].speed = cachedBeltSpeed; // Setze die Geschwindigkeit auf den gewünschten Wert.
+                __instance.beltPool[i].speed = cachedBeltSpeed;
             }
             return true;
         }

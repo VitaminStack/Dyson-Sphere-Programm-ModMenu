@@ -2,6 +2,7 @@
 
 
 Simple ModMenu for Dyson Sphere Programm, feel free to work on it and get it better.
+im pretty new to modding Unity Games, so don't expect something crazy.
 
 Need BepinEx to Work. https://github.com/BepInEx/BepInEx
 
@@ -13,5 +14,7 @@ Modded Mech Features: <br>
 -Mecha CraftSpeed * 10 <br>
 -Mecha Energy always Max <br>
 -Mecha HP always Max <br>
+-Mecha Laser Rapidfire <br>
+-Mecha Laser Damage * 10 <br>
 
 <img src="Menu.PNG"/>

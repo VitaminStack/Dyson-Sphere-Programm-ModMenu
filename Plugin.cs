@@ -30,6 +30,10 @@ public class VitaminsMieseMenu : BaseUnityPlugin
     public static bool MechaModded = false;
     public static bool achievementToggle = true;
 
+    public static bool passiveEnemy = false;
+    public static bool SaveGameLoaded = false;
+    public static CargoTraffic gData;
+
     void Awake()
     {
         VitaminPatch.MyPatcher.ApplyPatches();
@@ -46,13 +50,15 @@ public class VitaminsMieseMenu : BaseUnityPlugin
         {
             isMenuVisible = !isMenuVisible;
         }
+        
     }
     void OnGUI()
     {
         if (isMenuVisible)
-        {
+        {            
             menuRect = GUILayout.Window(0, menuRect, MenuWindowIngame, "Menu");
-        }
+        }        
+        
     }
 
 
@@ -75,6 +81,7 @@ public class VitaminsMieseMenu : BaseUnityPlugin
         GUILayout.EndHorizontal();
 
         MechaModded = GUILayout.Toggle(MechaModded, "Modded Mech");
+        passiveEnemy = GUILayout.Toggle(passiveEnemy, "Passive Enemy");
         achievementToggle = GUILayout.Toggle(achievementToggle, "Get Achievements?");
 
         if (GUILayout.Button("Reset Speed"))

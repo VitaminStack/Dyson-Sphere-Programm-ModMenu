@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace VitaminPatch
@@ -14,34 +15,39 @@ namespace VitaminPatch
 
     public class MyPatcher
     {
-
+        GameData gameData;
+        
         public static void ApplyPatches()
         {
             var harmony = new Harmony("com.VitaminMenu.patch");
 
 
-            MethodInfo DroneMethod = AccessTools.Method(typeof(DroneComponent), "InternalUpdate", new Type[] { typeof(CraftData).MakeByRefType(), typeof(PlanetFactory), typeof(Vector3).MakeByRefType(), typeof(float), typeof(float), typeof(double).MakeByRefType(), typeof(double).MakeByRefType(), typeof(double), typeof(double), typeof(float).MakeByRefType() });
+
+
+
             
+
+
+
+            MethodInfo DroneMethod = AccessTools.Method(typeof(DroneComponent), "InternalUpdate", new Type[] { typeof(CraftData).MakeByRefType(), typeof(PlanetFactory), typeof(Vector3).MakeByRefType(), typeof(float), typeof(float), typeof(double).MakeByRefType(), typeof(double).MakeByRefType(), typeof(double), typeof(double), typeof(float).MakeByRefType() });
             MethodInfo MechaMethod = AccessTools.Method(typeof(Mecha), "GameTick", new Type[] { typeof(long), typeof(float) });
             MethodInfo MechaExportMethod = AccessTools.Method(typeof(Mecha), "Export", new Type[] { typeof(BinaryWriter) });
-
-            MethodInfo BeltMethod = AccessTools.Method(typeof(CargoTraffic), "AlterBeltRenderer", new Type[] { typeof(int), typeof(EntityData[]), typeof(ColliderContainer[]), typeof(bool) });
-            MethodInfo AlterBeldConnect = AccessTools.Method(typeof(CargoTraffic), "AlterBeltConnections", new Type[] { typeof(int), typeof(int), typeof(int), typeof(int), typeof(int), typeof(bool) });
-            MethodInfo ExportBeltMethod = AccessTools.Method(typeof(CargoTraffic), "Export", new Type[] { typeof(BinaryWriter) });
-
             MethodInfo AbnormalyMethod = AccessTools.Method(typeof(GameAbnormalityData_0925), "TriggerAbnormality", new Type[] { typeof(int), typeof(int), typeof(long[]) });
-
-
-            VitaminLogger.LogInfo("Loading Patches...");
-            harmony.Patch(DroneMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.DronePrefix))));
-            harmony.Patch(MechaMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaPrefix))));
-            harmony.Patch(MechaExportMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaExportPrefix))));
-            harmony.Patch(BeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.AlterBeltPrefix))));
-            harmony.Patch(AlterBeldConnect, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.AlterBeltConnectPrefix))));
-            harmony.Patch(ExportBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.BeltExportPrefix))));
+            MethodInfo SaveGameMethod = AccessTools.Method(typeof(GameData), "GameTick", new Type[] { typeof(long) });
             harmony.Patch(AbnormalyMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.AbnormalyPrefix))));
-            VitaminLogger.LogInfo("Patches Loaded");
+            harmony.Patch(SaveGameMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.SaveGamePrefix))));
+            harmony.Patch(MechaMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaPrefix))));
+            harmony.Patch(DroneMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.DronePrefix))));
+            harmony.Patch(MechaExportMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaExportPrefix))));            
 
+            //MethodInfo UpgradeBeltMethod = AccessTools.Method(typeof(CargoTraffic), "UpgradeBeltComponent", new Type[] { typeof(int), typeof(int) });
+            //MethodInfo ExportBeltMethod = AccessTools.Method(typeof(CargoTraffic), "Export", new Type[] { typeof(BinaryWriter) });
+            //MethodInfo NewBeltMethod = AccessTools.Method(typeof(CargoTraffic), "NewBeltComponent", new Type[] { typeof(int), typeof(int) });
+            //harmony.Patch(UpgradeBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.UpgradeBeltPrefix))));
+            //harmony.Patch(ExportBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.BeltExportPrefix))));            
+            //harmony.Patch(NewBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.NewBeltPrefix))));
+            //MethodInfo ImportBeltMethod = AccessTools.Method(typeof(CargoTraffic), "Import", new Type[] { typeof(BinaryReader) });
+            //harmony.Patch(ImportBeltMethod, postfix: new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.BeltImportPostfix))));
 
         }
     }
@@ -50,9 +56,18 @@ namespace VitaminPatch
         public static float cachedDronespeed = 0.0f;
         public static float cachedWalkSpeed = 0.0f;
         public static int cachedBeltSpeed = 0;
+        public static int cachedupgradeSpeed = 99;
+        
         public static float cachedminingSpeed = 0.0f;
         public static float cachedreplicate = 0.0f;
 
+
+        public static float cachedAggro = 99.0f;
+        public static int cachedLaserDmg = 0;
+        public static int cachedMechaLaserInterval = 0;
+
+        public static CargoTraffic cTraffic = null;
+                
         public static bool DronePrefix(ref DroneComponent __instance, ref float droneSpeed)
         {
             if (cachedDronespeed == 0.0f)
@@ -60,7 +75,7 @@ namespace VitaminPatch
                 cachedDronespeed = droneSpeed;
             }
             droneSpeed = droneSpeed * VitaminsMieseMenu.DroneSlider;
-
+            
             return true;
         }
         public static bool MechaPrefix(ref Mecha __instance)
@@ -70,6 +85,8 @@ namespace VitaminPatch
                 cachedminingSpeed = __instance.miningSpeed;
                 cachedWalkSpeed = __instance.walkSpeed;
                 cachedreplicate = __instance.replicateSpeed;
+                cachedLaserDmg = __instance.laserLocalDamage;
+                cachedMechaLaserInterval = __instance.laserLocalInterval;
             }
             if (VitaminsMieseMenu.MechaModded)
             {
@@ -78,20 +95,28 @@ namespace VitaminPatch
                 __instance.miningSpeed = cachedminingSpeed * 2;
                 __instance.walkSpeed = cachedWalkSpeed * 1.3f;
                 __instance.replicateSpeed = cachedreplicate * 10;
+                __instance.bulletDamageScale = cachedLaserDmg * 10;
+                __instance.laserFire = 0;
+                __instance.laserEnergy = __instance.laserEnergyCapacity;
             }
             if (!VitaminsMieseMenu.MechaModded)
             {
                 __instance.miningSpeed = cachedminingSpeed;
                 __instance.walkSpeed = cachedWalkSpeed;
                 __instance.replicateSpeed = cachedreplicate;
+                __instance.laserLocalDamage = cachedLaserDmg;
             }
+            
             return true;
 
         }
         public static bool MechaExportPrefix(ref Mecha __instance, ref BinaryWriter w)
         {
-
-
+            if(VitaminsMieseMenu.passiveEnemy)
+            {
+                VitaminsMieseMenu.passiveEnemy = false;
+            }
+            
 
             w.Write(10);
             w.Write(__instance.coreEnergyCap);
@@ -212,9 +237,9 @@ namespace VitaminPatch
             w.Write(__instance.laserSpaceAttackRange);
             w.Write(__instance.laserLocalEnergyCost);
             w.Write(__instance.laserSpaceEnergyCost);
-            w.Write(__instance.laserLocalDamage);
+            w.Write(cachedLaserDmg);
             w.Write(__instance.laserSpaceDamage);
-            w.Write(__instance.laserLocalInterval);
+            w.Write(cachedMechaLaserInterval);
             w.Write(__instance.laserSpaceInterval);
             w.Write(__instance.autoReplenishHangar);
             __instance.fighterStorage.Export(w);
@@ -243,40 +268,7 @@ namespace VitaminPatch
             w.Write(2119973658);
             return false;
         }
-
-        public static bool AlterBeltPrefix(ref CargoTraffic __instance, int beltId)
-        {
-            if (cachedBeltSpeed == 0)
-            {
-                cachedBeltSpeed = __instance.beltPool[beltId].speed;
-            }
-
-            __instance.beltPool[beltId].speed = cachedBeltSpeed * (int)VitaminsMieseMenu.beltSlider;
-
-
-            return true;
-        }
-        public static bool AlterBeltConnectPrefix(ref CargoTraffic __instance, int beltId)
-        {
-            if (cachedBeltSpeed == 0)
-            {
-                cachedBeltSpeed = __instance.beltPool[beltId].speed;
-            }
-
-            __instance.beltPool[beltId].speed = cachedBeltSpeed * (int)VitaminsMieseMenu.beltSlider;
-
-
-            return true;
-        }
-        public static bool BeltExportPrefix(ref CargoTraffic __instance, ref BinaryWriter w)
-        {
-            for (int i = 0; i < __instance.beltPool.Length; i++)
-            {
-                __instance.beltPool[i].speed = cachedBeltSpeed;
-            }
-            return true;
-        }
-        public static bool AbnormalyPrefix(GameAbnormalityData_0925 __instance, int protoId, int minRecordVersion, params long[] vals)
+        public static bool AbnormalyPrefix(ref GameAbnormalityData_0925 __instance, int protoId, int minRecordVersion, params long[] vals)
         {
             if (!VitaminsMieseMenu.achievementToggle)
             {
@@ -296,7 +288,99 @@ namespace VitaminPatch
             }
             return false;
         }
+        public static bool SaveGamePrefix(ref GameData __instance, long time)
+        {
+            if (cachedAggro == 99.0f && __instance.history.combatSettings.aggressiveness != 0)
+            {
+                cachedAggro = __instance.history.combatSettings.aggressiveness;
+            }
+            if (VitaminsMieseMenu.passiveEnemy)
+            {
+                __instance.history.combatSettings.aggressiveness = 0;
+            }
+            if (!VitaminsMieseMenu.passiveEnemy && cachedAggro != 99.0f)
+            {
+                __instance.history.combatSettings.aggressiveness = cachedAggro;
+            }
 
+            return true;
+        }
+
+
+        public static void BeltImportPostfix(ref CargoTraffic __instance)
+        {
+            for (int k = 1; k < __instance.beltCursor; k++)
+            {
+                if (__instance.beltPool[k].speed == 1)
+                {
+                    __instance.beltPool[k].speed = 1 * (int)VitaminsMieseMenu.beltSlider;
+                }
+                if (__instance.beltPool[k].speed == 2)
+                {
+                    __instance.beltPool[k].speed = 2 * (int)VitaminsMieseMenu.beltSlider;
+                }
+                if (__instance.beltPool[k].speed == 3)
+                {
+                    __instance.beltPool[k].speed = 3 * (int)VitaminsMieseMenu.beltSlider;
+                }
+            }
+        }
+        public static bool BeltExportPrefix(ref CargoTraffic __instance, ref BinaryWriter w)
+        {
+            for (int i = 0; i < __instance.beltPool.Length; i++)
+            {
+                if (__instance.beltPool[i].speed == 1 * (int)VitaminsMieseMenu.beltSlider)
+                {
+                    __instance.beltPool[i].speed = 1;
+                }
+                if (__instance.beltPool[i].speed == 2 * (int)VitaminsMieseMenu.beltSlider)
+                {
+                    __instance.beltPool[i].speed = 2;
+                }
+                if (__instance.beltPool[i].speed == 3 * (int)VitaminsMieseMenu.beltSlider)
+                {
+                    __instance.beltPool[i].speed = 3;
+                }
+            }
+            return true;
+        }
+        public static bool UpgradeBeltPrefix(ref CargoTraffic __instance, int beltId, int speed)
+        {          
+            __instance.beltPool[beltId].speed = speed * VitaminsMieseMenu.beltSlider;
+            __instance.AlterBeltRenderer(beltId, __instance.factory.entityPool, (__instance.planet.physics == null) ? null : __instance.planet.physics.colChunks, false);
+            __instance.planet.physics.isPlanetPhysicsColliderDirty = true;
+            CargoPath cargoPath = __instance.GetCargoPath(__instance.beltPool[beltId].segPathId);
+            if (cargoPath.belts[cargoPath.belts.Count - 1] == beltId)
+            {
+                cargoPath.InsertChunk(__instance.beltPool[beltId].segIndex, cargoPath.pathLength - __instance.beltPool[beltId].segIndex, speed * VitaminsMieseMenu.beltSlider);
+            }
+            else
+            {
+                cargoPath.InsertChunk(__instance.beltPool[beltId].segIndex, __instance.beltPool[beltId].segLength, speed * VitaminsMieseMenu.beltSlider);
+            }
+            if (cargoPath.closed && __instance.beltPool[beltId].segIndex == 0)
+            {
+                cargoPath.SyncBuckleSpeed();
+            }
+            __instance.RefreshBeltBatchesBuffers();
+            return false;
+        }
+        public static bool NewBeltPrefix(ref CargoTraffic __instance, int entityId, ref int speed)
+        {
+            if (speed == 1)
+            {
+                speed = 1 * (int)VitaminsMieseMenu.beltSlider;
+            }
+            if (speed == 2)
+            {
+                speed = 2 * (int)VitaminsMieseMenu.beltSlider;
+            }
+            if (speed == 3)
+            {
+                speed = 3 * (int)VitaminsMieseMenu.beltSlider;
+            }
+            return true;
+        }
 
     }
 }

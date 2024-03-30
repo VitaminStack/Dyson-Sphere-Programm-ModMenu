@@ -16,38 +16,36 @@ namespace VitaminPatch
     public class MyPatcher
     {
         GameData gameData;
-        
+
         public static void ApplyPatches()
         {
             var harmony = new Harmony("com.VitaminMenu.patch");
 
+            MethodInfo PrefabMethod = AccessTools.Method(typeof(PrefabDesc), "ReadPrefab", new Type[] { typeof(GameObject), typeof(GameObject) });
+            harmony.Patch(PrefabMethod, postfix: new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.Prefabpostfix))));
 
-
-
-
-            
-
-
+            //MethodInfo ImportBeltMethod = AccessTools.Method(typeof(CargoTraffic), "Import", new Type[] { typeof(BinaryReader) });
+            //harmony.Patch(ImportBeltMethod, postfix: new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.BeltImportPostfix))));
+            //MethodInfo ExportBeltMethod = AccessTools.Method(typeof(CargoTraffic), "Export", new Type[] { typeof(BinaryWriter) });
+            //harmony.Patch(ExportBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.BeltExportPrefix))));
+            //MethodInfo UpgradeBeltMethod = AccessTools.Method(typeof(CargoTraffic), "UpgradeBeltComponent", new Type[] { typeof(int), typeof(int) });
+            //MethodInfo NewBeltMethod = AccessTools.Method(typeof(CargoTraffic), "NewBeltComponent", new Type[] { typeof(int), typeof(int) });
+            //harmony.Patch(UpgradeBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.UpgradeBeltPrefix))));
+            //harmony.Patch(NewBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.NewBeltPrefix))));
 
             MethodInfo DroneMethod = AccessTools.Method(typeof(DroneComponent), "InternalUpdate", new Type[] { typeof(CraftData).MakeByRefType(), typeof(PlanetFactory), typeof(Vector3).MakeByRefType(), typeof(float), typeof(float), typeof(double).MakeByRefType(), typeof(double).MakeByRefType(), typeof(double), typeof(double), typeof(float).MakeByRefType() });
             MethodInfo MechaMethod = AccessTools.Method(typeof(Mecha), "GameTick", new Type[] { typeof(long), typeof(float) });
             MethodInfo MechaExportMethod = AccessTools.Method(typeof(Mecha), "Export", new Type[] { typeof(BinaryWriter) });
             MethodInfo AbnormalyMethod = AccessTools.Method(typeof(GameAbnormalityData_0925), "TriggerAbnormality", new Type[] { typeof(int), typeof(int), typeof(long[]) });
-            MethodInfo SaveGameMethod = AccessTools.Method(typeof(GameData), "GameTick", new Type[] { typeof(long) });
+            MethodInfo AggroMethod = AccessTools.Method(typeof(CombatSettings), "get_aggressiveLevel", new Type[] {  });
             harmony.Patch(AbnormalyMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.AbnormalyPrefix))));
-            harmony.Patch(SaveGameMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.SaveGamePrefix))));
+            harmony.Patch(AggroMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.AggroPrefix))));
             harmony.Patch(MechaMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaPrefix))));
             harmony.Patch(DroneMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.DronePrefix))));
-            harmony.Patch(MechaExportMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaExportPrefix))));            
+            harmony.Patch(MechaExportMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.MechaExportPrefix))));
 
-            //MethodInfo UpgradeBeltMethod = AccessTools.Method(typeof(CargoTraffic), "UpgradeBeltComponent", new Type[] { typeof(int), typeof(int) });
-            //MethodInfo ExportBeltMethod = AccessTools.Method(typeof(CargoTraffic), "Export", new Type[] { typeof(BinaryWriter) });
-            //MethodInfo NewBeltMethod = AccessTools.Method(typeof(CargoTraffic), "NewBeltComponent", new Type[] { typeof(int), typeof(int) });
-            //harmony.Patch(UpgradeBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.UpgradeBeltPrefix))));
-            //harmony.Patch(ExportBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.BeltExportPrefix))));            
-            //harmony.Patch(NewBeltMethod, new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.NewBeltPrefix))));
-            //MethodInfo ImportBeltMethod = AccessTools.Method(typeof(CargoTraffic), "Import", new Type[] { typeof(BinaryReader) });
-            //harmony.Patch(ImportBeltMethod, postfix: new HarmonyMethod(typeof(VitaminPatch.Patches).GetMethod(nameof(VitaminPatch.Patches.BeltImportPostfix))));
+
+            
 
         }
     }
@@ -57,7 +55,7 @@ namespace VitaminPatch
         public static float cachedWalkSpeed = 0.0f;
         public static int cachedBeltSpeed = 0;
         public static int cachedupgradeSpeed = 99;
-        
+
         public static float cachedminingSpeed = 0.0f;
         public static float cachedreplicate = 0.0f;
 
@@ -67,7 +65,7 @@ namespace VitaminPatch
         public static int cachedMechaLaserInterval = 0;
 
         public static CargoTraffic cTraffic = null;
-                
+
         public static bool DronePrefix(ref DroneComponent __instance, ref float droneSpeed)
         {
             if (cachedDronespeed == 0.0f)
@@ -75,7 +73,7 @@ namespace VitaminPatch
                 cachedDronespeed = droneSpeed;
             }
             droneSpeed = droneSpeed * VitaminsMieseMenu.DroneSlider;
-            
+
             return true;
         }
         public static bool MechaPrefix(ref Mecha __instance)
@@ -106,17 +104,13 @@ namespace VitaminPatch
                 __instance.replicateSpeed = cachedreplicate;
                 __instance.laserLocalDamage = cachedLaserDmg;
             }
-            
+
             return true;
 
         }
         public static bool MechaExportPrefix(ref Mecha __instance, ref BinaryWriter w)
-        {
-            if(VitaminsMieseMenu.passiveEnemy)
-            {
-                VitaminsMieseMenu.passiveEnemy = false;
-            }
-            
+        {           
+
 
             w.Write(10);
             w.Write(__instance.coreEnergyCap);
@@ -288,23 +282,24 @@ namespace VitaminPatch
             }
             return false;
         }
-        public static bool SaveGamePrefix(ref GameData __instance, long time)
+        public static bool AggroPrefix(ref CombatSettings __instance, ref EAggressiveLevel __result)
         {
-            if (cachedAggro == 99.0f && __instance.history.combatSettings.aggressiveness != 0)
-            {
-                cachedAggro = __instance.history.combatSettings.aggressiveness;
-            }
+           
             if (VitaminsMieseMenu.passiveEnemy)
             {
-                __instance.history.combatSettings.aggressiveness = 0;
+                __result = (EAggressiveLevel)((10.0f));
             }
-            if (!VitaminsMieseMenu.passiveEnemy && cachedAggro != 99.0f)
+            if (!VitaminsMieseMenu.passiveEnemy)
             {
-                __instance.history.combatSettings.aggressiveness = cachedAggro;
+                __result = (EAggressiveLevel)((__instance.aggressiveness + 1f) * 10f + 0.5f);
             }
-
-            return true;
+            
+            return false;
         }
+            
+
+            
+        
 
 
         public static void BeltImportPostfix(ref CargoTraffic __instance)
@@ -345,7 +340,7 @@ namespace VitaminPatch
             return true;
         }
         public static bool UpgradeBeltPrefix(ref CargoTraffic __instance, int beltId, int speed)
-        {          
+        {
             __instance.beltPool[beltId].speed = speed * VitaminsMieseMenu.beltSlider;
             __instance.AlterBeltRenderer(beltId, __instance.factory.entityPool, (__instance.planet.physics == null) ? null : __instance.planet.physics.colChunks, false);
             __instance.planet.physics.isPlanetPhysicsColliderDirty = true;
@@ -381,6 +376,18 @@ namespace VitaminPatch
             }
             return true;
         }
+
+        public static void Prefabpostfix(ref PrefabDesc __instance, GameObject _prefab, GameObject _colliderPrefab)
+        {
+            BeltDesc componentInChildren7 = __instance.prefab.GetComponentInChildren<BeltDesc>(true);
+            if (componentInChildren7 != null && VitaminsMieseMenu.BeltSpeedMod)
+            {
+                __instance.beltSpeed = componentInChildren7.speed * VitaminsMieseMenu.BeltMultiplier;
+            }
+            
+        }
+
+
 
     }
 }
